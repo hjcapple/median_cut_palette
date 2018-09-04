@@ -37,18 +37,14 @@ static void imageDataReleaseCallback(void *info, const void *data, size_t size) 
 }
 
 static CGImageRef createRefWithPixels(const uint32_t *pixels, bool needFreePixels, NSInteger width, NSInteger height) {
-    void *buffer = (void *)pixels;
-    NSInteger bufferLength = width * height * 4;
     CGDataProviderReleaseDataCallback releaseDataCallBack = needFreePixels ? imageDataReleaseCallback : NULL;
 
-    // 设置Bitmap信息
-    CGDataProviderRef provider = CGDataProviderCreateWithData(NULL, buffer, bufferLength, releaseDataCallBack);
+    CGDataProviderRef provider = CGDataProviderCreateWithData(NULL, pixels, width * height * 4, releaseDataCallBack);
     CF_SCOPE_RELEASE(provider);
 
     CGColorSpaceRef colorSpaceRef = CGColorSpaceCreateDeviceRGB();
     CF_SCOPE_RELEASE(colorSpaceRef);
 
-    // 创建Bitmap图片
     return CGImageCreate(width,
                          height,
                          8,

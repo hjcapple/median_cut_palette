@@ -44,11 +44,10 @@ namespace palette {
     }
 
     //////////////////////////////////////////
-    void Cube::shrink(uint16_t lower, uint16_t upper, uint16_t level) {
+    void Cube::shrink(uint16_t lower, uint16_t upper) {
         assert(lower < upper);
         _lower = lower;
         _upper = upper;
-        _level = level;
 
         _count = 0;
         _rmin = _gmin = _bmin = 255;
@@ -72,16 +71,27 @@ namespace palette {
         _volume = (_rmax - _rmin + 1) * (_gmax - _gmin + 1) * (_bmax - _bmin + 1);
     }
 
-    int Cube::findCubeToSplite(const Cube *cubes, size_t numCubes) {
-        size_t maxVolume = 0;
+    int Cube::findCubeToSplite(const Cube *cubes, size_t numCubes, size_t maxCubes) {
+        size_t maxOrderV = 0;
         int splitpos = -1;
+
+        // test difference order method
+        // auto getOrderValue = [](const Cube &cube) { return cube._volume; };
+        // auto getOrderValue = [](const Cube &cube) { return cube._count; };
+        auto getOrderValue = (numCubes >= maxCubes * 0.75)
+                                 ? [](const Cube &cube) { return cube._count; }
+                                 : [](const Cube &cube) { return cube._count * cube._volume; };
+
         for (size_t i = 0; i < numCubes; i++) {
             const Cube &cube = cubes[i];
             if (cube._upper - cube._lower <= 1) {
                 // single color
-            } else if (cube._volume > maxVolume) {
-                maxVolume = cube._volume;
-                splitpos = (int)i;
+            } else {
+                auto v = getOrderValue(cube);
+                if (v > maxOrderV) {
+                    maxOrderV = v;
+                    splitpos = (int)i;
+                }
             }
         }
         return splitpos;
@@ -118,8 +128,8 @@ namespace palette {
             }
         }
 
-        cubeA.shrink(_lower, median, _level + 1);
-        cubeB.shrink(median, _upper, _level + 1);
+        cubeA.shrink(_lower, median);
+        cubeB.shrink(median, _upper);
     }
 
     RGBA Cube::getAverageRGBA() const {
@@ -165,7 +175,7 @@ namespace palette {
 
     void Palette::spliteCubes(Cube *cubes, size_t &numCubes, size_t maxCubes) {
         while (numCubes < maxCubes) {
-            int splitpos = Cube::findCubeToSplite(cubes, numCubes);
+            int splitpos = Cube::findCubeToSplite(cubes, numCubes, maxCubes);
             if (splitpos == -1) {
                 break;
             }
@@ -199,12 +209,12 @@ namespace palette {
         if (upper - lower <= maxcubes) {
             Cube cube(_hist, _histPtr);
             for (size_t idx = lower; idx < upper; idx++) {
-                cube.shrink(idx, idx + 1, 0);
+                cube.shrink(idx, idx + 1);
                 callback(cube);
             }
         } else {
             Cube cube(_hist, _histPtr);
-            cube.shrink(lower, upper, 0);
+            cube.shrink(lower, upper);
 
             Cube *cubes = (Cube *)malloc(sizeof(Cube) * maxcubes);
             size_t numCubes = 0;

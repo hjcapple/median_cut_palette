@@ -9,7 +9,7 @@ namespace palette {
 
     typedef uint32_t RGBA;
 
-    struct Cube final {
+    class Cube final {
     public:
         RGBA getAverageRGBA() const;
 
@@ -17,25 +17,24 @@ namespace palette {
         Cube(const int *hist, uint16_t *histPtr) : _hist(hist), _histPtr(histPtr) {
         }
 
-        void shrink(uint16_t lower, uint16_t upper, uint16_t level);
+        void shrink(uint16_t lower, uint16_t upper);
         friend class Palette;
 
-        static int findCubeToSplite(const Cube *cubes, size_t numCubes);
+        static int findCubeToSplite(const Cube *cubes, size_t numCubes, size_t maxCubes);
         void spliteCubes(Cube &cubeA, Cube &cubeB);
-
+        
     private:
         const int *_hist;
         uint16_t *_histPtr;
 
         uint16_t _lower;
         uint16_t _upper;
-        int _count;
 
         uint8_t _rmin, _rmax;
         uint8_t _gmin, _gmax;
         uint8_t _bmin, _bmax;
-        int _volume;
-        uint16_t _level;
+        size_t _volume;
+        size_t _count;
     };
 
     class Palette final {
